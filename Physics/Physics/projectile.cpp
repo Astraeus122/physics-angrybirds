@@ -71,6 +71,17 @@ void Projectile::update(sf::Time deltaTime)
 {
     GameObject::update(deltaTime);
 
+    if (mHasExplosionEffect)
+    {
+        mExplosionEffectTimer -= deltaTime;
+        if (mExplosionEffectTimer <= sf::Time::Zero)
+        {
+            mHasExplosionEffect = false;
+            mHasExploded = false;
+            markForDeletion(); // Now mark for deletion after effect
+        }
+    }
+
     if (mPhysicsBody && mWindow)
     {
         b2Vec2 position = mPhysicsBody->GetPosition();
@@ -116,20 +127,11 @@ void Projectile::render(sf::RenderWindow& window)
 
 void Projectile::onCollision(GameObject* other)
 {
-    if (other)
+    if (mPhysicsWorldPtr && mLaunched)
     {
-        // Existing collision handling code
-        if (mPhysicsWorldPtr && mLaunched)
-        {
-            applyEffect(*mPhysicsWorldPtr, other);
-        }
-    }
-    else
-    {
-        // Handle collision with static objects like ground 
+        applyEffect(*mPhysicsWorldPtr, other);
     }
 }
-
 
 void Projectile::launch(const sf::Vector2f& direction, float force)
 {
@@ -168,7 +170,7 @@ void Projectile::applyEffect(PhysicsWorld& world, GameObject* other)
         b2Vec2 position = mPhysicsBody->GetPosition();
         world.applyExplosionForce(position, mExplosionRadius * PhysicsWorld::INVERSE_SCALE, mBaseDamage);
         createExplosionEffect();
-        markForDeletion(); // Ensure the projectile is destroyed after exploding
+        mHasExploded = true;
     }
     break;
     case Type::Split:
@@ -248,4 +250,9 @@ void Projectile::createExplosionEffect()
     mExplosionShape.setPosition(getPosition());
     mHasExplosionEffect = true;
     mExplosionEffectTimer = mExplosionEffectDuration;
+}
+
+bool Projectile::isEffectActive() const
+{
+    return mHasExplosionEffect || mBounceCount > 0;
 }

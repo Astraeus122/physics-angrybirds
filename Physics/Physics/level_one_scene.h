@@ -78,7 +78,6 @@ private:
     int mEnemiesLeft;
     int mCurrentLevel;
 
-    void handleProjectileEffects();
     void createSplitProjectiles(const Projectile* originalProjectile);
     void removeDestroyedObjects();
 };

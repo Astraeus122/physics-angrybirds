@@ -253,10 +253,23 @@ void LevelOneScene::update(sf::Time deltaTime)
     {
         (*it)->update(deltaTime);
 
-        if ((*it)->isMarkedForDeletion() || isProjectileOffScreen(*it) || (*it)->hasExceededLifetime())
+        if ((*it)->hasExceededLifetime())
         {
             mPhysicsWorld.destroyBody((*it)->getPhysicsBody());
             it = mProjectiles.erase(it);
+        }
+        else if ((*it)->isMarkedForDeletion())
+        {
+            // Check if the projectile still has active effects
+            if (!(*it)->isEffectActive())
+            {
+                mPhysicsWorld.destroyBody((*it)->getPhysicsBody());
+                it = mProjectiles.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
         }
         else
         {
@@ -269,8 +282,6 @@ void LevelOneScene::update(sf::Time deltaTime)
     {
         mProjectileLaunched = false;
     }
-
-    handleProjectileEffects();
 
     if (mProjectiles.empty() && mProjectilesLeft > 0)
     {
@@ -327,13 +338,12 @@ void LevelOneScene::createSplitProjectiles(const Projectile* originalProjectile)
     b2Vec2 velocity = originalProjectile->getPhysicsBody()->GetLinearVelocity();
     float speed = velocity.Length();
 
-    const int numProjectiles = 5;
-    const float angleStep = 15.0f * b2_pi / 180.0f; // 15 degrees in radians
+    const float SPLIT_ANGLE = 15.0f * b2_pi / 180.0f; // 15 degrees in radians
     float baseAngle = atan2(velocity.y, velocity.x);
 
-    for (int i = -numProjectiles / 2; i <= numProjectiles / 2; ++i)
+    for (int i = -1; i <= 1; i += 2) // Create two new projectiles
     {
-        float angle = baseAngle + i * angleStep;
+        float angle = baseAngle + i * SPLIT_ANGLE;
         b2Vec2 newVelocity(speed * cos(angle), speed * sin(angle));
 
         auto newProjectile = std::make_unique<Projectile>(mPhysicsWorld, mFireballTexture, Projectile::Type::Standard, mWindow);
@@ -341,11 +351,8 @@ void LevelOneScene::createSplitProjectiles(const Projectile* originalProjectile)
         newProjectile->getPhysicsBody()->SetLinearVelocity(newVelocity);
         newProjectile->setLaunched(true);
 
-        // Set up the callback for the new projectile as well
-        newProjectile->onSplit = [this](const Projectile& p)
-            {
-                // Prevent further splitting to avoid infinite recursion
-            };
+        // Prevent further splitting
+        newProjectile->onSplit = nullptr;
 
         mProjectiles.push_back(std::move(newProjectile));
     }
@@ -506,33 +513,6 @@ void LevelOneScene::createBlocks()
 void LevelOneScene::updateUI(int projectilesLeft, int enemiesLeft, int currentLevel)
 {
     mGameUI.update(projectilesLeft, enemiesLeft, currentLevel);
-}
-
-void LevelOneScene::handleProjectileEffects()
-{
-    for (auto it = mProjectiles.begin(); it != mProjectiles.end();)
-    {
-        if ((*it)->isMarkedForDeletion())
-        {
-            if ((*it)->getType() == Projectile::Type::Split)
-            {
-                createSplitProjectiles(it->get());
-            }
-            else if ((*it)->getType() == Projectile::Type::Explosive)
-            {
-                // Apply explosion effect
-                b2Vec2 explosionCenter = (*it)->getPhysicsBody()->GetPosition();
-                float explosionRadius = 3.0f; // in meters
-                float explosionForce = 1000.0f; // adjust as needed
-                mPhysicsWorld.applyExplosionForce(explosionCenter, explosionRadius, explosionForce);
-            }
-            it = mProjectiles.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
 }
 
 void LevelOneScene::removeDestroyedObjects()

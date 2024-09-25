@@ -45,6 +45,7 @@ public:
     bool hasExceededLifetime() const { return mLifetime <= sf::Time::Zero; }
 
     std::function<void(const Projectile&)> onSplit;
+    bool isEffectActive() const;
 
 private:
     Type mType;
@@ -67,7 +68,7 @@ private:
     bool mHasExplosionEffect = false;
     sf::Time mExplosionEffectDuration = sf::seconds(0.5f);
     sf::Time mExplosionEffectTimer = sf::Time::Zero;
-
+    bool mHasExploded = false;
 };
 
 #endif
