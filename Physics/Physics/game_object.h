@@ -32,6 +32,7 @@ public:
     bool isMarkedForDeletion() const;
 
     virtual void debugDraw(sf::RenderWindow& window);
+    void setPhysicsBody(b2Body* body);
 
 protected:
     sf::Sprite mSprite;

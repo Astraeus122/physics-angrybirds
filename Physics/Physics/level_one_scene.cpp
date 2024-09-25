@@ -271,7 +271,6 @@ void LevelOneScene::update(sf::Time deltaTime)
     }
 
     handleProjectileEffects();
-    removeDestroyedObjects();
 
     if (mProjectiles.empty() && mProjectilesLeft > 0)
     {
@@ -280,6 +279,7 @@ void LevelOneScene::update(sf::Time deltaTime)
 
     checkLevelCompletion();
     updateUI(mProjectilesLeft, mEnemiesLeft, mCurrentLevel);
+    removeDestroyedObjects();
 }
 
 void LevelOneScene::createProjectile()
@@ -327,11 +327,13 @@ void LevelOneScene::createSplitProjectiles(const Projectile* originalProjectile)
     b2Vec2 velocity = originalProjectile->getPhysicsBody()->GetLinearVelocity();
     float speed = velocity.Length();
 
-    const float SPLIT_ANGLE = 30.0f * b2_pi / 180.0f; // 30 degrees in radians
+    const int numProjectiles = 5;
+    const float angleStep = 15.0f * b2_pi / 180.0f; // 15 degrees in radians
+    float baseAngle = atan2(velocity.y, velocity.x);
 
-    for (int i = -1; i <= 1; i += 2) // Create two new projectiles
+    for (int i = -numProjectiles / 2; i <= numProjectiles / 2; ++i)
     {
-        float angle = atan2(velocity.y, velocity.x) + i * SPLIT_ANGLE;
+        float angle = baseAngle + i * angleStep;
         b2Vec2 newVelocity(speed * cos(angle), speed * sin(angle));
 
         auto newProjectile = std::make_unique<Projectile>(mPhysicsWorld, mFireballTexture, Projectile::Type::Standard, mWindow);
@@ -342,13 +344,12 @@ void LevelOneScene::createSplitProjectiles(const Projectile* originalProjectile)
         // Set up the callback for the new projectile as well
         newProjectile->onSplit = [this](const Projectile& p)
             {
-                this->createSplitProjectiles(&p);
+                // Prevent further splitting to avoid infinite recursion
             };
 
         mProjectiles.push_back(std::move(newProjectile));
     }
 }
-
 
 void LevelOneScene::launchProjectile()
 {
@@ -425,14 +426,15 @@ void LevelOneScene::resetProjectile()
 void LevelOneScene::createEnemies()
 {
     std::cout << "Creating enemies..." << std::endl;
-    auto enemy = std::make_unique<Enemy>(mPhysicsWorld, mEnemyTexture, 80.f, 80.f);
-    enemy->setPosition(1700.f, 700.f);
-    mGameObjects.push_back(std::move(enemy));
+    std::vector<sf::Vector2f> enemyPositions = { {1700.f, 700.f}, {1600.f, 500.f} };
 
-    auto enemy2 = std::make_unique<Enemy>(mPhysicsWorld, mEnemyTexture, 80.f, 80.f);
-    enemy2->setPosition(1600.f, 500.f);
-    mGameObjects.push_back(std::move(enemy2));
-    std::cout << "Enemy creation complete." << std::endl;
+    for (const auto& pos : enemyPositions)
+    {
+        auto enemy = std::make_unique<Enemy>(mEnemyTexture, 80.f, 80.f);
+        enemy->setPosition(pos.x, pos.y);
+        enemy->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy));
+    }
 }
 
 void LevelOneScene::checkLevelCompletion()
@@ -489,12 +491,13 @@ void LevelOneScene::printAllBodies()
 void LevelOneScene::createBlocks()
 {
     std::cout << "Creating blocks..." << std::endl;
-    for (int i = 0; i < 5; ++i) {
-        auto block = std::make_unique<Block>(mPhysicsWorld, mBlockTexture, 80.f, 80.f);
+    for (int i = 0; i < 5; ++i) 
+    {
+        auto block = std::make_unique<Block>(mBlockTexture, 80.f, 80.f);
         float xPos = 1500.f + i * 90.f;
         float yPos = 800.f - i * 90.f;
         block->setPosition(xPos, yPos);
-        std::cout << "  Block " << i << " position: (" << xPos << ", " << yPos << ")" << std::endl;
+        block->initPhysicsBody(mPhysicsWorld); // Initialize the physics body after setting position
         mGameObjects.push_back(std::move(block));
     }
     std::cout << "Block creation complete." << std::endl;
@@ -543,6 +546,7 @@ void LevelOneScene::removeDestroyedObjects()
                     obj->getPosition().y < 0 || obj->getPosition().y > windowSize.y)
                 {
                     mPhysicsWorld.destroyBody(obj->getPhysicsBody());
+                    // mPhysicsBody is set to nullptr inside destroyBody
                     return true;
                 }
                 return false;
@@ -612,5 +616,8 @@ bool LevelOneScene::isProjectileOffScreen(const std::unique_ptr<Projectile>& pro
 {
     sf::Vector2f position = projectile->getPosition();
     sf::Vector2u windowSize = mWindow->getSize();
-    return position.x < 0 || position.x > windowSize.x || position.y < 0 || position.y > windowSize.y;
+    float buffer = 100.0f; // Allow some buffer off-screen
+
+    return position.x < -buffer || position.x > windowSize.x + buffer ||
+        position.y < -buffer || position.y > windowSize.y + buffer;
 }

@@ -4,7 +4,7 @@
 
 const float Block::MAX_HEALTH = 100.f;
 
-Block::Block(PhysicsWorld& world, const sf::Texture& texture, float width, float height, bool isStatic)
+Block::Block(const sf::Texture& texture, float width, float height)
     : mHealth(MAX_HEALTH)
 {
     setTexture(texture);
@@ -14,28 +14,6 @@ Block::Block(PhysicsWorld& world, const sf::Texture& texture, float width, float
     float scaleX = width / texture.getSize().x;
     float scaleY = height / texture.getSize().y;
     mSprite.setScale(scaleX, scaleY);
-
-    if (!isStatic)
-    {
-        b2BodyDef bodyDef;
-        bodyDef.type = b2_dynamicBody;
-        bodyDef.position.Set(getPosition().x / PhysicsWorld::SCALE, getPosition().y / PhysicsWorld::SCALE);
-        bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(this);
-        bodyDef.userData.pointer = 0;
-
-        mPhysicsBody = world.createBody(bodyDef);
-
-        b2PolygonShape boxShape;
-        boxShape.SetAsBox((width / 2) / PhysicsWorld::SCALE, (height / 2) / PhysicsWorld::SCALE);
-
-        b2FixtureDef fixtureDef;
-        fixtureDef.shape = &boxShape;
-        fixtureDef.density = 0.8f;
-        fixtureDef.friction = 0.5f;
-        fixtureDef.restitution = 0.2f;
-
-        mPhysicsBody->CreateFixture(&fixtureDef);
-    }
 
     // Set the sprite's origin to its center
     mSprite.setOrigin(texture.getSize().x / 2.f, texture.getSize().y / 2.f);
@@ -80,4 +58,28 @@ void Block::damage(float amount)
 bool Block::isDestroyed() const
 {
     return mHealth <= 0;
+}
+
+void Block::initPhysicsBody(PhysicsWorld& world, bool isStatic)
+{
+    b2BodyDef bodyDef;
+    bodyDef.type = isStatic ? b2_staticBody : b2_dynamicBody;
+    sf::Vector2f pos = getPosition();
+    bodyDef.position.Set(pos.x / PhysicsWorld::SCALE, pos.y / PhysicsWorld::SCALE);
+    bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(this);
+
+    mPhysicsBody = world.createBody(bodyDef);
+
+    b2PolygonShape boxShape;
+    float width = mSprite.getGlobalBounds().width;
+    float height = mSprite.getGlobalBounds().height;
+    boxShape.SetAsBox((width / 2) / PhysicsWorld::SCALE, (height / 2) / PhysicsWorld::SCALE);
+
+    b2FixtureDef fixtureDef;
+    fixtureDef.shape = &boxShape;
+    fixtureDef.density = isStatic ? 0.0f : 0.8f;
+    fixtureDef.friction = 0.5f;
+    fixtureDef.restitution = 0.2f;
+
+    mPhysicsBody->CreateFixture(&fixtureDef);
 }

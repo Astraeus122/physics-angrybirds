@@ -4,7 +4,7 @@
 
 const float Enemy::MAX_HEALTH = 100.f;
 
-Enemy::Enemy(PhysicsWorld& world, const sf::Texture& texture, float width, float height)
+Enemy::Enemy(const sf::Texture& texture, float width, float height)
     : mHealth(MAX_HEALTH)
 {
     setTexture(texture);
@@ -17,29 +17,6 @@ Enemy::Enemy(PhysicsWorld& world, const sf::Texture& texture, float width, float
 
     // Center the origin of the sprite
     mSprite.setOrigin(texture.getSize().x / 2.f, texture.getSize().y / 2.f);
-
-    b2BodyDef bodyDef;
-    bodyDef.type = b2_dynamicBody;
-    bodyDef.position.Set(getPosition().x / PhysicsWorld::SCALE, getPosition().y / PhysicsWorld::SCALE);
-    bodyDef.fixedRotation = true; // Prevent rotation
-    bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(this);
-    bodyDef.userData.pointer = 0;
-
-    mPhysicsBody = world.createBody(bodyDef);
-
-    b2PolygonShape boxShape;
-    boxShape.SetAsBox(
-        (width / 2.0f) / PhysicsWorld::SCALE,
-        (height / 2.0f) / PhysicsWorld::SCALE
-    );
-
-    b2FixtureDef fixtureDef;
-    fixtureDef.shape = &boxShape;
-    fixtureDef.density = 0.9f;
-    fixtureDef.friction = 0.3f;
-    fixtureDef.restitution = 0.15f;
-
-    mPhysicsBody->CreateFixture(&fixtureDef);
 }
 
 void Enemy::update(sf::Time deltaTime)
@@ -80,4 +57,29 @@ void Enemy::damage(float amount)
 bool Enemy::isDefeated() const
 {
     return mHealth <= 0;
+}
+
+void Enemy::initPhysicsBody(PhysicsWorld& world)
+{
+    b2BodyDef bodyDef;
+    bodyDef.type = b2_dynamicBody;
+    sf::Vector2f pos = getPosition();
+    bodyDef.position.Set(pos.x / PhysicsWorld::SCALE, pos.y / PhysicsWorld::SCALE);
+    bodyDef.fixedRotation = true; // Prevent rotation
+    bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(this);
+
+    mPhysicsBody = world.createBody(bodyDef);
+
+    b2PolygonShape boxShape;
+    float width = mSprite.getGlobalBounds().width;
+    float height = mSprite.getGlobalBounds().height;
+    boxShape.SetAsBox((width / 2.0f) / PhysicsWorld::SCALE, (height / 2.0f) / PhysicsWorld::SCALE);
+
+    b2FixtureDef fixtureDef;
+    fixtureDef.shape = &boxShape;
+    fixtureDef.density = 0.9f;
+    fixtureDef.friction = 0.3f;
+    fixtureDef.restitution = 0.15f;
+
+    mPhysicsBody->CreateFixture(&fixtureDef);
 }

@@ -6,7 +6,8 @@
 class Block : public GameObject
 {
 public:
-    Block(PhysicsWorld& world, const sf::Texture& texture, float width, float height, bool isStatic = false);
+
+    Block(const sf::Texture& texture, float width, float height);
 
     void update(sf::Time deltaTime) override;
     void render(sf::RenderWindow& window) override;
@@ -15,6 +16,7 @@ public:
     void damage(float amount);
     bool isDestroyed() const;
     float getHealth() const { return mHealth; }
+    void initPhysicsBody(PhysicsWorld& world, bool isStatic = false);
 
 private:
     float mHealth;

@@ -21,7 +21,7 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-x64/
+# x64/
 x86/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
@@ -31,6 +31,12 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+
+# Include x64 Release and Debug executables
+!x64/Release/
+!x64/Release/*.exe
+!x64/Debug/
+!x64/Debug/*.exe
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

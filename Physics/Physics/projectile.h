@@ -62,6 +62,12 @@ private:
     void createSplitProjectiles(PhysicsWorld& world);
     void createExplosionEffect();
     PhysicsWorld* mPhysicsWorldPtr; // Store a pointer to PhysicsWorld
+
+    sf::CircleShape mExplosionShape;
+    bool mHasExplosionEffect = false;
+    sf::Time mExplosionEffectDuration = sf::seconds(0.5f);
+    sf::Time mExplosionEffectTimer = sf::Time::Zero;
+
 };
 
 #endif

@@ -7,7 +7,7 @@
 Projectile::Projectile(PhysicsWorld& world, const sf::Texture& texture, Type type, sf::RenderWindow* window)
     : GameObject(), mType(type), mBaseDamage(0), mExplosionRadius(0), mBounceCount(0),
     mSplitAngle(0), mLaunched(false), mPhysicsWorldPtr(&world), mWindow(window),
-    mLifetime(sf::seconds(8.0f))
+    mLifetime(sf::seconds(10.0f))
 {
     setTexture(texture);
 
@@ -27,7 +27,6 @@ Projectile::Projectile(PhysicsWorld& world, const sf::Texture& texture, Type typ
     bodyDef.position.Set(getPosition().x / PhysicsWorld::SCALE, getPosition().y / PhysicsWorld::SCALE);
     bodyDef.fixedRotation = true; // Prevent rotation
     bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(this);
-    bodyDef.userData.pointer = 0;
 
     mPhysicsBody = world.createBody(bodyDef);
 
@@ -46,7 +45,7 @@ Projectile::Projectile(PhysicsWorld& world, const sf::Texture& texture, Type typ
     switch (mType)
     {
     case Type::Standard:
-        mBaseDamage = 50.0f;
+        mBaseDamage = 100.0f;
         break;
     case Type::Bouncy:
         mBaseDamage = 30.0f;
@@ -54,7 +53,7 @@ Projectile::Projectile(PhysicsWorld& world, const sf::Texture& texture, Type typ
         mPhysicsBody->GetFixtureList()->SetRestitution(0.8f);
         break;
     case Type::Explosive:
-        mBaseDamage = 70.0f;
+        mBaseDamage = 200.0f;
         mExplosionRadius = 100.0f;
         break;
     case Type::Heavy:
@@ -88,10 +87,20 @@ void Projectile::update(sf::Time deltaTime)
         }
     }
 
+    if (mHasExplosionEffect)
+    {
+        mExplosionEffectTimer -= deltaTime;
+        if (mExplosionEffectTimer <= sf::Time::Zero)
+        {
+            mHasExplosionEffect = false;
+        }
+    }
+
     // Update lifetime
     mLifetime -= deltaTime;
     if (mLifetime <= sf::Time::Zero)
     {
+        std::cout << "Projectile lifetime expired. Marking for deletion." << std::endl;
         markForDeletion();
     }
 }
@@ -99,6 +108,10 @@ void Projectile::update(sf::Time deltaTime)
 void Projectile::render(sf::RenderWindow& window)
 {
     window.draw(mSprite);
+    if (mHasExplosionEffect)
+    {
+        window.draw(mExplosionShape);
+    }
 }
 
 void Projectile::onCollision(GameObject* other)
@@ -129,7 +142,8 @@ void Projectile::launch(const sf::Vector2f& direction, float force)
 float Projectile::calculateDamage() const
 {
     float velocityMagnitude = mPhysicsBody->GetLinearVelocity().Length();
-    return mBaseDamage * velocityMagnitude * PhysicsWorld::SCALE / 100.0f;
+    float damage = mBaseDamage * (velocityMagnitude / 10.0f);
+    return damage;
 }
 
 void Projectile::applyEffect(PhysicsWorld& world, GameObject* other)
@@ -141,12 +155,12 @@ void Projectile::applyEffect(PhysicsWorld& world, GameObject* other)
         {
             mBounceCount--;
             b2Vec2 velocity = mPhysicsBody->GetLinearVelocity();
-            mPhysicsBody->SetLinearVelocity(b2Vec2(velocity.x * BOUNCE_VELOCITY_FACTOR,
-                velocity.y * BOUNCE_VELOCITY_FACTOR));
+            velocity *= BOUNCE_VELOCITY_FACTOR;
+            mPhysicsBody->SetLinearVelocity(velocity);
         }
         else
         {
-            markForDeletion(); // Remove the projectile after maximum bounces
+            markForDeletion();
         }
         break;
     case Type::Explosive:
@@ -228,9 +242,10 @@ const sf::Texture* Projectile::getTexture() const
 
 void Projectile::createExplosionEffect()
 {
-    // Create a circular shape for the explosion effect
-    sf::CircleShape explosionShape(mExplosionRadius * PhysicsWorld::SCALE);
-    explosionShape.setFillColor(sf::Color(255, 0, 0, 128)); // Semi-transparent red
-    explosionShape.setPosition(getPosition().x - mExplosionRadius * PhysicsWorld::SCALE,
-        getPosition().y - mExplosionRadius * PhysicsWorld::SCALE);
-}   
+    mExplosionShape = sf::CircleShape(mExplosionRadius);
+    mExplosionShape.setFillColor(sf::Color(255, 165, 0, 150)); // Semi-transparent orange
+    mExplosionShape.setOrigin(mExplosionRadius, mExplosionRadius);
+    mExplosionShape.setPosition(getPosition());
+    mHasExplosionEffect = true;
+    mExplosionEffectTimer = mExplosionEffectDuration;
+}

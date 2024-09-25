@@ -6,7 +6,8 @@
 class Enemy : public GameObject
 {
 public:
-    Enemy(PhysicsWorld& world, const sf::Texture& texture, float width, float height);
+
+    Enemy(const sf::Texture& texture, float width, float height);
 
     void update(sf::Time deltaTime) override;
     void render(sf::RenderWindow& window) override;
@@ -16,6 +17,7 @@ public:
     bool isDefeated() const;
 
     float getHealth() const { return mHealth; }
+    void initPhysicsBody(PhysicsWorld& world);
 
 private:
     float mHealth;

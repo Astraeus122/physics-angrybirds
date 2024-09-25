@@ -34,6 +34,12 @@ void PhysicsWorld::destroyBody(b2Body* body)
 {
     if (body)
     {
+        // Retrieve the GameObject associated with this body
+        GameObject* gameObject = reinterpret_cast<GameObject*>(body->GetUserData().pointer);
+        if (gameObject)
+        {
+            gameObject->setPhysicsBody(nullptr); // Set mPhysicsBody to nullptr
+        }
         mWorld->DestroyBody(body);
     }
 }
@@ -114,11 +120,13 @@ void PhysicsWorld::BeginContact(b2Contact* contact)
 
     if (objectA)
     {
+        std::cout << "Collision detected: " << typeid(*objectA).name() << std::endl;
         objectA->onCollision(objectB);
     }
 
     if (objectB)
     {
+        std::cout << "Collision detected: " << typeid(*objectB).name() << std::endl;
         objectB->onCollision(objectA);
     }
 }
@@ -130,7 +138,6 @@ void PhysicsWorld::EndContact(b2Contact* contact)
 
 void PhysicsWorld::applyExplosionForce(const b2Vec2& center, float radius, float force)
 {
-    // Adjusted code to apply damage to GameObjects within the radius
     b2AABB aabb;
     aabb.lowerBound = center - b2Vec2(radius, radius);
     aabb.upperBound = center + b2Vec2(radius, radius);

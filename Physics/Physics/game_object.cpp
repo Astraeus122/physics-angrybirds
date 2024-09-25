@@ -21,7 +21,10 @@ void GameObject::setPosition(float x, float y)
     mSprite.setPosition(x, y);
     if (mPhysicsBody)
     {
-        mPhysicsBody->SetTransform(b2Vec2(x * PhysicsWorld::INVERSE_SCALE, y * PhysicsWorld::INVERSE_SCALE), mPhysicsBody->GetAngle());
+        mPhysicsBody->SetTransform(
+            b2Vec2(x * PhysicsWorld::INVERSE_SCALE, y * PhysicsWorld::INVERSE_SCALE),
+            mPhysicsBody->GetAngle()
+        );
     }
 }
 
@@ -108,7 +111,6 @@ void GameObject::createPhysicsBody(PhysicsWorld& world, b2BodyType type)
     bodyDef.angularDamping = 0.8f;
     bodyDef.linearDamping = 0.1f;
     bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(this);
-    bodyDef.userData.pointer = 0;
 
     mPhysicsBody = world.createBody(bodyDef);
 
@@ -186,4 +188,9 @@ void GameObject::debugDraw(sf::RenderWindow& window)
             }
         }
     }
+}
+
+void GameObject::setPhysicsBody(b2Body* body)
+{
+    mPhysicsBody = body;
 }
