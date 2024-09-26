@@ -25,7 +25,8 @@ void PhysicsWorld::update(float deltaTime)
     cleanupMarkedObjects();
 }
 
-b2Body* PhysicsWorld::createBody(const b2BodyDef& bodyDef) {
+b2Body* PhysicsWorld::createBody(const b2BodyDef& bodyDef) 
+{
     logBodyCreation(bodyDef, "Unknown");
     return mWorld->CreateBody(&bodyDef);
 }
@@ -55,8 +56,9 @@ void PhysicsWorld::registerGameObject(std::unique_ptr<GameObject> gameObject)
     {
         mGameObjects.push_back(std::move(gameObject));
     }
-    else {
-        std::cerr << "Attempted to register null game object" << std::endl;
+    else 
+    {
+        std::cout << "Attempted to register null game object" << std::endl;
     }
 }
 
@@ -100,34 +102,66 @@ void PhysicsWorld::BeginContact(b2Contact* contact)
     GameObject* objectA = nullptr;
     GameObject* objectB = nullptr;
 
+    std::cout << "Begin contact between bodies at positions: ("
+        << bodyA->GetPosition().x << ", " << bodyA->GetPosition().y << ") and ("
+        << bodyB->GetPosition().x << ", " << bodyB->GetPosition().y << ")" << std::endl;
+
     if (bodyA)
     {
         uintptr_t userDataA = bodyA->GetUserData().pointer;
+        std::cout << "Body A user data: " << userDataA << std::endl;
         if (userDataA != 0 && userDataA != uintptr_t(-1))
         {
             objectA = reinterpret_cast<GameObject*>(userDataA);
+            std::cout << "Object A address: " << objectA << std::endl;
         }
     }
 
     if (bodyB)
     {
         uintptr_t userDataB = bodyB->GetUserData().pointer;
+        std::cout << "Body B user data: " << userDataB << std::endl;
         if (userDataB != 0 && userDataB != uintptr_t(-1))
         {
             objectB = reinterpret_cast<GameObject*>(userDataB);
+            std::cout << "Object B address: " << objectB << std::endl;
         }
     }
 
     if (objectA)
     {
-        std::cout << "Collision detected: " << typeid(*objectA).name() << std::endl;
-        objectA->onCollision(objectB);
+        try 
+        {
+            std::cout << "Attempting to access Object A..." << std::endl;
+            std::cout << "Collision detected: " << typeid(*objectA).name() << std::endl;
+            objectA->onCollision(objectB);
+        }
+        catch (const std::exception& e) 
+        {
+            std::cout << "Exception caught while handling collision for Object A: " << e.what() << std::endl;
+        }
+        catch (...) 
+        {
+            std::cout << "Unknown exception caught while handling collision for Object A" << std::endl;
+        }
     }
 
     if (objectB)
     {
-        std::cout << "Collision detected: " << typeid(*objectB).name() << std::endl;
-        objectB->onCollision(objectA);
+        try 
+        {
+            std::cout << "Attempting to access Object B..." << std::endl;
+            std::cout << "Collision detected: " << typeid(*objectB).name() << std::endl;
+            objectB->onCollision(objectA);
+        }
+        catch (const std::exception& e) 
+        {
+            std::cout << "Exception caught while handling collision for Object B: " << e.what() << std::endl;
+        }
+        catch (...)
+        {
+            std::cout << "Unknown exception caught while handling collision for Object B" << std::endl;
+        }
     }
 }
 
@@ -142,7 +176,8 @@ void PhysicsWorld::applyExplosionForce(const b2Vec2& center, float radius, float
     aabb.lowerBound = center - b2Vec2(radius, radius);
     aabb.upperBound = center + b2Vec2(radius, radius);
 
-    queryAABB(aabb, [&](b2Fixture* fixture) {
+    queryAABB(aabb, [&](b2Fixture* fixture)
+        {
         b2Body* body = fixture->GetBody();
         b2Vec2 bodyCenter = body->GetWorldCenter();
         b2Vec2 direction = bodyCenter - center;
@@ -193,12 +228,15 @@ void PhysicsWorld::applyBounceEffect(Projectile* projectile)
 
 void PhysicsWorld::cleanupMarkedObjects()
 {
-    mGameObjects.erase(
+    mGameObjects.erase
+    (
         std::remove_if(mGameObjects.begin(), mGameObjects.end(),
-            [](const std::unique_ptr<GameObject>& obj) {
+            [](const std::unique_ptr<GameObject>& obj)
+            {
                 return obj->isMarkedForDeletion();
             }),
-        mGameObjects.end());
+        mGameObjects.end()
+    );
 }
 
 void PhysicsWorld::queryAABB(const b2AABB& aabb, std::function<bool(b2Fixture*)> callback)
@@ -227,7 +265,7 @@ void PhysicsWorld::removeMarkedBodies()
 
     for (b2Body* body = mWorld->GetBodyList(); body; )
     {
-        b2Body* nextBody = body->GetNext(); // Store next body before potential destruction
+        b2Body* nextBody = body->GetNext();
 
         GameObject* obj = reinterpret_cast<GameObject*>(body->GetUserData().pointer);
         if (obj && obj->isMarkedForDeletion())
@@ -240,33 +278,7 @@ void PhysicsWorld::removeMarkedBodies()
 
     for (b2Body* body : bodiesToDestroy)
     {
-        mWorld->DestroyBody(body);
+        destroyBody(body);
     }
 }
 
-
-void PhysicsWorld::createSplitProjectiles(Projectile* originalProjectile)
-{
-    if (!originalProjectile || !mWindow) return;
-
-    b2Body* body = originalProjectile->getPhysicsBody();
-    b2Vec2 position = body->GetPosition();
-    b2Vec2 velocity = body->GetLinearVelocity();
-    float speed = velocity.Length();
-
-    const float SPLIT_ANGLE = 30.0f * b2_pi / 180.0f; // 30 degrees in radians
-
-    for (int i = -1; i <= 1; i += 2) // Create two new projectiles
-    {
-        float angle = atan2(velocity.y, velocity.x) + i * SPLIT_ANGLE;
-        b2Vec2 newVelocity(speed * cos(angle), speed * sin(angle));
-
-        // Create a new projectile
-        auto newProjectile = std::make_unique<Projectile>(*this, *originalProjectile->getTexture(), Projectile::Type::Standard, mWindow);
-        newProjectile->setPosition(position.x * SCALE, position.y * SCALE);
-        newProjectile->getPhysicsBody()->SetLinearVelocity(newVelocity);
-        newProjectile->setLaunched(true);
-
-        addProjectile(std::move(newProjectile));
-    }
-}

@@ -32,9 +32,7 @@ protected:
     bool mIsCompleted;
     GameUI mGameUI;
 
-    // New methods to update UI
     void updateUI(int projectilesLeft, int enemiesLeft, int currentLevel);
 };
-
 
 #endif

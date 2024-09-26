@@ -3,10 +3,12 @@
 
 #include "menu.h"
 
-class LoseScreen : public Menu 
+class Game;  // Forward declaration
+
+class LoseScreen : public Menu
 {
 public:
-    LoseScreen(sf::RenderWindow& window);
+    LoseScreen(sf::RenderWindow& window, Game& game);
 
     void handleEvent(const sf::Event& event) override;
     void update(sf::Time deltaTime) override;
@@ -15,6 +17,7 @@ public:
 private:
     sf::Sprite mBackgroundSprite;
     sf::Texture mBackgroundTexture;
+    Game& mGame;
 };
 
 #endif

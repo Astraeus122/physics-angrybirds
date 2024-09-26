@@ -1,13 +1,16 @@
 #include "game_UI.h"
 #include <iostream>
 
-GameUI::GameUI() : mSelectedProjectileType(Projectile::Type::Standard), mHoveredProjectile(-1) {}
+GameUI::GameUI() : mSelectedProjectileType(Projectile::Type::Standard), mHoveredProjectile(-1)
+{
+    initializeProjectileAvailability();
+}
 
 void GameUI::initialize(sf::RenderWindow* window)
 {
     if (!mFont.loadFromFile("dependencies/font.ttf"))
     {
-        std::cerr << "Failed to load font!" << std::endl;
+        std::cout << "Failed to load font" << std::endl;
     }
 
     loadProjectileTextures();
@@ -51,7 +54,8 @@ void GameUI::initializeProjectileSelection()
     const float SPRITE_Y = 10.f;
     const float DESCRIPTION_Y = 60.f;
 
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; ++i)
+    {
         mProjectileSprites[i].setTexture(mProjectileTextures[i]);
         mProjectileSprites[i].setPosition(10 + i * SPRITE_SPACING, SPRITE_Y);
         mProjectileSprites[i].setScale(0.5f, 0.5f);
@@ -98,6 +102,7 @@ void GameUI::update(int projectilesLeft, int enemiesLeft, int currentLevel)
     mProjectilesText.setString("Projectiles: " + std::to_string(projectilesLeft));
     mEnemiesText.setString("Enemies: " + std::to_string(enemiesLeft));
     mLevelText.setString("Level: " + std::to_string(currentLevel));
+    updateCurrentProjectileText();
 }
 
 void GameUI::render(sf::RenderWindow& window)
@@ -108,15 +113,32 @@ void GameUI::render(sf::RenderWindow& window)
     renderProjectileSelection(window);
 }
 
+void GameUI::updateProjectileAvailability(Projectile::Type type, bool available)
+{
+    if (type == Projectile::Type::Standard)
+        return;
+
+    int index = static_cast<int>(type);
+    mProjectileAvailability[index] = available;
+
+    if (!available && mSelectedProjectileType == type)
+    {
+        mSelectedProjectileType = Projectile::Type::Standard;
+    }
+
+    // Update UI visuals
+    mProjectileSprites[index].setColor(available ? sf::Color::White : sf::Color(128, 128, 128));
+}
+
 void GameUI::handleProjectileSelection(const sf::Vector2i& mousePosition)
 {
-    mHoveredProjectile = -1;
-    for (int i = 0; i < 5; ++i) {
-        if (mProjectileSprites[i].getGlobalBounds().contains(mousePosition.x, mousePosition.y)) {
-            mHoveredProjectile = i;
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+    for (int i = 0; i < 5; ++i)
+    {
+        if (mProjectileSprites[i].getGlobalBounds().contains(mousePosition.x, mousePosition.y))
+        {
+            if (mProjectileAvailability[i])
+            {
                 mSelectedProjectileType = static_cast<Projectile::Type>(i);
-                updateCurrentProjectileText();
             }
             break;
         }
@@ -125,9 +147,11 @@ void GameUI::handleProjectileSelection(const sf::Vector2i& mousePosition)
 
 void GameUI::renderProjectileSelection(sf::RenderWindow& window)
 {
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; ++i) 
+    {
         window.draw(mProjectileSprites[i]);
-        if (static_cast<Projectile::Type>(i) == mSelectedProjectileType) {
+        if (static_cast<Projectile::Type>(i) == mSelectedProjectileType) 
+        {
             // Highlight the selected projectile type
             sf::RectangleShape highlight(sf::Vector2f(mProjectileSprites[i].getGlobalBounds().width, mProjectileSprites[i].getGlobalBounds().height));
             highlight.setPosition(mProjectileSprites[i].getPosition());
@@ -138,7 +162,8 @@ void GameUI::renderProjectileSelection(sf::RenderWindow& window)
         }
     }
 
-    if (mHoveredProjectile != -1) {
+    if (mHoveredProjectile != -1)
+    {
         window.draw(mProjectileDescriptions[mHoveredProjectile]);
     }
 
@@ -148,4 +173,57 @@ void GameUI::renderProjectileSelection(sf::RenderWindow& window)
 Projectile::Type GameUI::getSelectedProjectileType() const
 {
     return mSelectedProjectileType;
+}
+
+bool GameUI::isProjectileAvailable(Projectile::Type type) const
+{
+    // Ensure standard projectile is always available
+    if (type == Projectile::Type::Standard)
+        return true;
+
+    return mProjectileAvailability[static_cast<int>(type)];
+}
+
+void GameUI::setSelectedProjectileType(Projectile::Type type)
+{
+    if (isProjectileAvailable(type))
+    {
+        mSelectedProjectileType = type;
+        updateCurrentProjectileText();
+    }
+}
+
+void GameUI::initializeProjectileAvailability()
+{
+    // Set all projectiles to available initially
+    mProjectileAvailability.fill(true);
+}
+
+void GameUI::handleMouseHover(const sf::Vector2i& mousePosition)
+{
+    mHoveredProjectile = -1;
+    for (int i = 0; i < 5; ++i)
+    {
+        if (mProjectileSprites[i].getGlobalBounds().contains(mousePosition.x, mousePosition.y))
+        {
+            mHoveredProjectile = i;
+            break;
+        }
+    }
+}
+
+void GameUI::handleMouseClick(const sf::Vector2i& mousePosition)
+{
+    for (int i = 0; i < 5; ++i)
+    {
+        if (mProjectileSprites[i].getGlobalBounds().contains(mousePosition.x, mousePosition.y))
+        {
+            if (mProjectileAvailability[i])
+            {
+                mSelectedProjectileType = static_cast<Projectile::Type>(i);
+                updateCurrentProjectileText();
+            }
+            break;
+        }
+    }
 }

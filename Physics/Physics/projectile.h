@@ -20,7 +20,7 @@ public:
         Split
     };
 
-    Projectile(PhysicsWorld& world, const sf::Texture& texture, Type type, sf::RenderWindow* window = nullptr);
+    Projectile(PhysicsWorld& world, const sf::Texture& texture, Type type, sf::RenderWindow* window, const sf::Vector2f& initialPosition);
     virtual ~Projectile() = default;
 
     void update(sf::Time deltaTime) override;
@@ -47,11 +47,15 @@ public:
     std::function<void(const Projectile&)> onSplit;
     bool isEffectActive() const;
 
+    void bounce();
+
+    void updatePosition(float x, float y);
+
 private:
     Type mType;
     float mBaseDamage;
     float mExplosionRadius; // For explosive projectiles
-    int mBounceCount; // For bouncy projectiles
+    int mBounceCount = 0; // For bouncy projectiles
     float mSplitAngle; // For split projectiles
     static constexpr float BOUNCE_VELOCITY_FACTOR = 1.1f;
     static constexpr int MAX_BOUNCES = 5;
@@ -60,15 +64,18 @@ private:
     sf::Time mLifetime;
     sf::RenderWindow* mWindow;
 
-    void createSplitProjectiles(PhysicsWorld& world);
     void createExplosionEffect();
-    PhysicsWorld* mPhysicsWorldPtr; // Store a pointer to PhysicsWorld
+    PhysicsWorld* mPhysicsWorldPtr;
 
     sf::CircleShape mExplosionShape;
     bool mHasExplosionEffect = false;
     sf::Time mExplosionEffectDuration = sf::seconds(0.5f);
     sf::Time mExplosionEffectTimer = sf::Time::Zero;
     bool mHasExploded = false;
+
+    static constexpr float SPLIT_ANGLE = 30.0f * b2_pi / 180.0f;
+
+    bool mIsKinematic;
 };
 
 #endif

@@ -121,7 +121,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Dependencies/SFML/include;$(ProjectDir)Dependencies/Box2D/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Includes\SFML\include;$(ProjectDir)Dependencies/SFML/include;$(ProjectDir)Dependencies/Box2D/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,7 +129,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)Dependencies/SFML/lib;$(ProjectDir)Dependencies\Box2D\lib;</AdditionalLibraryDirectories>
-      <AdditionalDependencies>sfml-graphics.lib;sfml-window.lib;sfml-system.lib;sfml-audio.lib;box2d.lib</AdditionalDependencies>
+      <AdditionalDependencies>box2d.lib;sfml-graphics.lib;sfml-window.lib;sfml-system.lib;sfml-audio.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -140,7 +140,7 @@
     <ClCompile Include="game_UI.cpp" />
     <ClCompile Include="instructions_screen.cpp" />
     <ClCompile Include="joint_object.cpp" />
-    <ClCompile Include="level_one_scene.cpp" />
+    <ClCompile Include="level_scene.cpp" />
     <ClCompile Include="lose_screen.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main_menu.cpp" />
@@ -159,7 +159,7 @@
     <ClInclude Include="game_UI.h" />
     <ClInclude Include="instructions_screen.h" />
     <ClInclude Include="joint_object.h" />
-    <ClInclude Include="level_one_scene.h" />
+    <ClInclude Include="level_scene.h" />
     <ClInclude Include="lose_screen.h" />
     <ClInclude Include="main_menu.h" />
     <ClInclude Include="menu.h" />

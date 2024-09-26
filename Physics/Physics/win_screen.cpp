@@ -1,11 +1,13 @@
 #include "win_screen.h"
+#include "game.h"
 #include <iostream>
 
-WinScreen::WinScreen(sf::RenderWindow& window) : Menu(window) 
+WinScreen::WinScreen(sf::RenderWindow& window, Game& game)
+    : Menu(window), mGame(game)
 {
-    if (!mBackgroundTexture.loadFromFile("dependencies/sprites/win.png")) 
+    if (!mBackgroundTexture.loadFromFile("dependencies/sprites/win.png"))
     {
-        std::cerr << "Failed to load win screen background image!" << std::endl;
+        std::cout << "Failed to load win screen background image" << std::endl;
     }
     mBackgroundSprite.setTexture(mBackgroundTexture);
 
@@ -14,24 +16,23 @@ WinScreen::WinScreen(sf::RenderWindow& window) : Menu(window)
     float scaleY = window.getSize().y / static_cast<float>(mBackgroundTexture.getSize().y);
     mBackgroundSprite.setScale(scaleX, scaleY);
 
-    addButton("Next Level", []() { /* Go to next level action */ });
-    addButton("Main Menu", []() { /* Return to main menu action */ });
-    addButton("Quit", []() { /* Quit game action */ });
+    addButton("Main Menu", [this]() { mGame.setState(Game::GameState::MainMenu); });
+    addButton("Quit", [this]() { mGame.quitGame(); });
 
     float yOffset = 400.0f;
-    for (auto& button : mButtons) 
+    for (auto& button : mButtons)
     {
         centerText(button.text, yOffset);
         yOffset += 100.0f;
     }
 }
 
-void WinScreen::handleEvent(const sf::Event& event) 
+void WinScreen::handleEvent(const sf::Event& event)
 {
-    if (event.type == sf::Event::MouseButtonPressed) 
+    if (event.type == sf::Event::MouseButtonPressed)
     {
         sf::Vector2f mousePos = mWindow.mapPixelToCoords(sf::Mouse::getPosition(mWindow));
-        for (auto& button : mButtons) 
+        for (auto& button : mButtons)
         {
             if (button.text.getGlobalBounds().contains(mousePos))
             {
@@ -44,10 +45,9 @@ void WinScreen::handleEvent(const sf::Event& event)
 
 void WinScreen::update(sf::Time deltaTime)
 {
-    // Update logic if needed
 }
 
-void WinScreen::render() 
+void WinScreen::render()
 {
     mWindow.draw(mBackgroundSprite);
     for (const auto& button : mButtons)

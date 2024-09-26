@@ -4,10 +4,10 @@
 #include "block.h"
 #include <iostream>
 
-Projectile::Projectile(PhysicsWorld& world, const sf::Texture& texture, Type type, sf::RenderWindow* window)
+Projectile::Projectile(PhysicsWorld& world, const sf::Texture& texture, Type type, sf::RenderWindow* window, const sf::Vector2f& initialPosition)
     : GameObject(), mType(type), mBaseDamage(0), mExplosionRadius(0), mBounceCount(0),
     mSplitAngle(0), mLaunched(false), mPhysicsWorldPtr(&world), mWindow(window),
-    mLifetime(sf::seconds(10.0f))
+    mLifetime(sf::seconds(10.0f)), mIsKinematic(true)
 {
     setTexture(texture);
 
@@ -22,10 +22,14 @@ Projectile::Projectile(PhysicsWorld& world, const sf::Texture& texture, Type typ
     // Center the origin of the sprite
     mSprite.setOrigin(textureSize.x / 2.f, textureSize.y / 2.f);
 
+    // Set the initial position before creating the physics body
+    setPosition(initialPosition.x, initialPosition.y);
+
+    // Create the body as kinematic initially
     b2BodyDef bodyDef;
-    bodyDef.type = b2_dynamicBody;
-    bodyDef.position.Set(getPosition().x / PhysicsWorld::SCALE, getPosition().y / PhysicsWorld::SCALE);
-    bodyDef.fixedRotation = true; // Prevent rotation
+    bodyDef.type = b2_kinematicBody;
+    bodyDef.position.Set(initialPosition.x * PhysicsWorld::INVERSE_SCALE, initialPosition.y * PhysicsWorld::INVERSE_SCALE);
+    bodyDef.fixedRotation = true;
     bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(this);
 
     mPhysicsBody = world.createBody(bodyDef);
@@ -78,7 +82,7 @@ void Projectile::update(sf::Time deltaTime)
         {
             mHasExplosionEffect = false;
             mHasExploded = false;
-            markForDeletion(); // Now mark for deletion after effect
+            markForDeletion(); // mark for deletion after effect
         }
     }
 
@@ -135,10 +139,30 @@ void Projectile::onCollision(GameObject* other)
 
 void Projectile::launch(const sf::Vector2f& direction, float force)
 {
-    b2Vec2 velocity(direction.x * force * PhysicsWorld::INVERSE_SCALE,
-        direction.y * force * PhysicsWorld::INVERSE_SCALE);
-    mPhysicsBody->SetLinearVelocity(velocity);
-    mLaunched = true;
+    if (mIsKinematic && mPhysicsBody)
+    {
+        // Change the body type to dynamic
+        mPhysicsBody->SetType(b2_dynamicBody);
+        mIsKinematic = false;
+
+        // Apply the launch velocity
+        b2Vec2 velocity(direction.x * force * PhysicsWorld::INVERSE_SCALE,
+            direction.y * force * PhysicsWorld::INVERSE_SCALE);
+        mPhysicsBody->SetLinearVelocity(velocity);
+        mLaunched = true;
+
+        switch (mType)
+        {
+        case Type::Heavy:
+            mPhysicsBody->SetGravityScale(1.5f);
+            break;
+        case Type::Bouncy:
+            mPhysicsBody->GetFixtureList()->SetRestitution(0.8f);
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 float Projectile::calculateDamage() const
@@ -152,19 +176,6 @@ void Projectile::applyEffect(PhysicsWorld& world, GameObject* other)
 {
     switch (mType)
     {
-    case Type::Bouncy:
-        if (mBounceCount > 0)
-        {
-            mBounceCount--;
-            b2Vec2 velocity = mPhysicsBody->GetLinearVelocity();
-            velocity *= BOUNCE_VELOCITY_FACTOR;
-            mPhysicsBody->SetLinearVelocity(velocity);
-        }
-        else
-        {
-            markForDeletion();
-        }
-        break;
     case Type::Explosive:
     {
         b2Vec2 position = mPhysicsBody->GetPosition();
@@ -178,10 +189,11 @@ void Projectile::applyEffect(PhysicsWorld& world, GameObject* other)
         {
             onSplit(*this);
         }
-        markForDeletion();
+        markForDeletion(); // Mark the original projectile for deletion
         break;
     case Type::Heavy:
     case Type::Standard:
+    {
         if (auto* enemy = dynamic_cast<Enemy*>(other))
         {
             float damage = calculateDamage();
@@ -194,37 +206,19 @@ void Projectile::applyEffect(PhysicsWorld& world, GameObject* other)
             if (mType == Type::Heavy) damage *= 2.0f; // Double damage for heavy projectiles
             block->damage(damage);
         }
-        break;
     }
-}
-
-void Projectile::createSplitProjectiles(PhysicsWorld& world)
-{
-    b2Vec2 position = mPhysicsBody->GetPosition();
-    b2Vec2 velocity = mPhysicsBody->GetLinearVelocity();
-    float speed = velocity.Length();
-
-    const float SPLIT_ANGLE = 30.0f * b2_pi / 180.0f; // 30 degrees in radians
-
-    for (int i = -1; i <= 1; i += 2) // Create two new projectiles
-    {
-        float angle = atan2(velocity.y, velocity.x) + i * SPLIT_ANGLE;
-        b2Vec2 newVelocity(speed * cos(angle), speed * sin(angle));
-
-        auto newProjectile = std::make_unique<Projectile>(world, *mSprite.getTexture(), Type::Standard);
-        newProjectile->setPosition(position.x * PhysicsWorld::SCALE, position.y * PhysicsWorld::SCALE);
-        newProjectile->getPhysicsBody()->SetLinearVelocity(newVelocity);
-        newProjectile->mLaunched = true;
-
-        world.addProjectile(std::move(newProjectile));
+    break;
+    case Type::Bouncy:
+        break;
     }
 }
 
 void Projectile::setKinematic(bool isKinematic)
 {
-    if (mPhysicsBody)
+    if (mPhysicsBody && mIsKinematic != isKinematic)
     {
         mPhysicsBody->SetType(isKinematic ? b2_kinematicBody : b2_dynamicBody);
+        mIsKinematic = isKinematic;
     }
 }
 
@@ -255,4 +249,23 @@ void Projectile::createExplosionEffect()
 bool Projectile::isEffectActive() const
 {
     return mHasExplosionEffect || mBounceCount > 0;
+}
+
+void Projectile::bounce()
+{
+    if (mType != Type::Bouncy || mBounceCount >= MAX_BOUNCES) return;
+
+    mBounceCount++;
+    b2Vec2 velocity = mPhysicsBody->GetLinearVelocity();
+    velocity *= BOUNCE_VELOCITY_FACTOR;
+    mPhysicsBody->SetLinearVelocity(velocity);
+}
+
+void Projectile::updatePosition(float x, float y)
+{
+    setPosition(x, y);
+    if (mPhysicsBody && mIsKinematic)
+    {
+        mPhysicsBody->SetTransform(b2Vec2(x * PhysicsWorld::INVERSE_SCALE, y * PhysicsWorld::INVERSE_SCALE), mPhysicsBody->GetAngle());
+    }
 }

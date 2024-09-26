@@ -25,7 +25,6 @@ void Enemy::update(sf::Time deltaTime)
     {
         b2Vec2 position = mPhysicsBody->GetPosition();
         setPosition(position.x * PhysicsWorld::SCALE, position.y * PhysicsWorld::SCALE);
-        // We don't update rotation because fixedRotation is true
     }
 }
 

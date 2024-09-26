@@ -1,10 +1,17 @@
 #include "Game.h"
 #include "main_menu.h"
-#include "level_one_scene.h"
 
 const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
 
 Game::Game() : mWindow(nullptr), mGameState(GameState::MainMenu) {}
+
+Game::~Game()
+{
+    if (!mIsQuitting)
+    {
+        quitGame();
+    }
+}
 
 void Game::setWindow(sf::RenderWindow* window)
 {
@@ -26,29 +33,30 @@ void Game::setState(GameState newState)
     switch (mGameState)
     {
     case GameState::MainMenu:
-        mCurrentScene.reset();
+        resetGameState();
         mCurrentMenu = std::make_unique<MainMenu>(*mWindow, [this](int option) { handleMainMenuCallback(option); });
+        break;
+    case GameState::Playing:
+        mCurrentMenu.reset();
+        if (!mLevelScene) {
+            mLevelScene = std::make_unique<LevelScene>();
+            mLevelScene->setWindow(mWindow);
+            mLevelScene->initialize();
+        }
+        mCurrentScene = mLevelScene.get();
         break;
     case GameState::Paused:
         mCurrentMenu = std::make_unique<PauseMenu>(*mWindow, [this](int option) { handlePauseMenuCallback(option); });
         break;
     case GameState::GameOver:
-        mCurrentMenu = std::make_unique<LoseScreen>(*mWindow);
+        mCurrentMenu = std::make_unique<LoseScreen>(*mWindow, *this);
         break;
     case GameState::GameWon:
-        mCurrentMenu = std::make_unique<WinScreen>(*mWindow);
+        mCurrentMenu = std::make_unique<WinScreen>(*mWindow, *this);
         break;
     case GameState::HowToPlay:
-        mCurrentScene.reset();
+        resetGameState();
         mCurrentMenu = std::make_unique<InstructionsScreen>(*mWindow, [this]() { handleHowToPlayCallback(); });
-        break;
-    case GameState::Playing:
-        mCurrentMenu.reset();
-        if (!mCurrentScene) {
-            mCurrentScene = std::make_unique<LevelOneScene>();
-            mCurrentScene->setWindow(mWindow);
-            mCurrentScene->initialize();
-        }
         break;
     }
 }
@@ -82,21 +90,23 @@ void Game::run()
     sf::Clock clock;
     sf::Time timeSinceLastUpdate = sf::Time::Zero;
 
-    while (mWindow->isOpen())
+    while (mWindow->isOpen() && !mIsQuitting)
     {
         processEvents();
         timeSinceLastUpdate += clock.restart();
 
-        while (timeSinceLastUpdate > TimePerFrame)
+        while (timeSinceLastUpdate > TimePerFrame && !mIsQuitting)
         {
             timeSinceLastUpdate -= TimePerFrame;
             update(TimePerFrame);
         }
 
-        render();
+        if (!mIsQuitting)
+        {
+            render();
+        }
     }
 }
-
 void Game::processEvents()
 {
     sf::Event event;
@@ -120,9 +130,7 @@ void Game::handlePauseMenuCallback(int option)
         setState(GameState::MainMenu);
         break;
     case 2: // Quit
-        if (mWindow) {
-            mWindow->close();
-        }
+        quitGame();
         break;
     }
 }
@@ -131,7 +139,6 @@ void Game::handleHowToPlayCallback()
 {
     setState(GameState::MainMenu);
 }
-
 
 void Game::handleEvent(const sf::Event& event)
 {
@@ -168,6 +175,20 @@ void Game::update(sf::Time deltaTime)
 {
     switch (mGameState)
     {
+    case GameState::Playing:
+        if (mCurrentScene && mLevelScene)
+        {
+            mCurrentScene->update(deltaTime);
+            if (mLevelScene->isLevelCompleted())
+            {
+                nextLevel();
+            }
+            else if (mLevelScene->isLevelFailed())
+            {
+                setState(GameState::GameOver);
+            }
+        }
+        break;
     case GameState::MainMenu:
     case GameState::Paused:
     case GameState::GameOver:
@@ -175,10 +196,6 @@ void Game::update(sf::Time deltaTime)
     case GameState::HowToPlay:
         if (mCurrentMenu)
             mCurrentMenu->update(deltaTime);
-        break;
-    case GameState::Playing:
-        if (mCurrentScene)
-            mCurrentScene->update(deltaTime);
         break;
     }
 }
@@ -196,7 +213,7 @@ void Game::render()
     case GameState::Paused:
         if (mCurrentScene)
             mCurrentScene->render(*mWindow);
-        // Fall through to draw pause menu on top
+        // Draw pause menu on top
     case GameState::MainMenu:
     case GameState::GameOver:
     case GameState::GameWon:
@@ -211,10 +228,70 @@ void Game::render()
 
 void Game::setScene(std::unique_ptr<Scene> scene)
 {
-    mCurrentScene = std::move(scene);
+    delete mCurrentScene;  // Delete the old scene
+    mCurrentScene = scene.release();  //  ownership to mCurrentScene
     if (mCurrentScene && mWindow)
     {
         mCurrentScene->setWindow(mWindow);
         mCurrentScene->initialize();
+    }
+
+    // Check if the new scene is a LevelScene
+    LevelScene* levelScene = dynamic_cast<LevelScene*>(mCurrentScene);
+    if (levelScene)
+    {
+        mLevelScene.reset(levelScene);
+        mCurrentLevelNumber = mLevelScene->getCurrentLevel();
+    }
+}
+
+void Game::nextLevel()
+{
+    mCurrentLevelNumber++;
+    if (mCurrentLevelNumber > 3) 
+    {
+        setState(GameState::GameWon);
+    }
+    else
+    {
+        loadLevel(mCurrentLevelNumber);
+    }
+}
+
+void Game::restartLevel()
+{
+    loadLevel(mCurrentLevelNumber);
+}
+
+void Game::loadLevel(int levelNumber)
+{
+    if (!mLevelScene)
+    {
+        mLevelScene = std::make_unique<LevelScene>();
+        mLevelScene->setWindow(mWindow);
+        mLevelScene->initialize();
+    }
+
+    mLevelScene->setLevel(levelNumber);
+    mCurrentScene = mLevelScene.get();
+    setState(GameState::Playing);
+}
+
+void Game::resetGameState()
+{
+    mLevelScene.reset();
+    mCurrentScene = nullptr;
+}
+
+void Game::quitGame()
+{
+    mIsQuitting = true;
+
+    resetGameState();
+    mCurrentMenu.reset();
+
+    if (mWindow)
+    {
+        mWindow->close();
     }
 }

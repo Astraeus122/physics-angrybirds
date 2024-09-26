@@ -7,7 +7,6 @@
 class PauseMenu : public Menu
 {
 public:
-    PauseMenu(sf::RenderWindow& window);
     PauseMenu(sf::RenderWindow& window, std::function<void(int)> callback);
 
     void handleEvent(const sf::Event& event) override;

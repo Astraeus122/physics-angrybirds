@@ -12,7 +12,7 @@ void Scene::update(sf::Time deltaTime)
     {
         if (*it == nullptr)
         {
-            std::cerr << "Encountered null GameObject in update loop. Removing it.\n";
+            std::cout << "Encountered null GameObject in update loop. Removing it.\n";
             it = mGameObjects.erase(it);
             continue;
         }
@@ -22,7 +22,8 @@ void Scene::update(sf::Time deltaTime)
             mPhysicsWorld.unregisterGameObject(it->get());
             it = mGameObjects.erase(it);
         }
-        else {
+        else 
+        {
             (*it)->update(deltaTime);
             ++it;
         }
@@ -39,7 +40,7 @@ void Scene::addGameObject(std::unique_ptr<GameObject> gameObject)
     }
     else
     {
-        std::cerr << "Attempted to add null game object to scene" << std::endl;
+        std::cout << "Attempted to add null game object to scene" << std::endl;
     }
 }
 
@@ -59,7 +60,7 @@ void Scene::render(sf::RenderWindow& window)
         }
         else
         {
-            std::cerr << "Encountered null GameObject in render loop.\n";
+            std::cout << "Encountered null GameObject in render loop.\n";
         }
     }
 
@@ -73,7 +74,7 @@ void Scene::updateUI(int projectilesLeft, int enemiesLeft, int currentLevel)
 
 void Scene::handleEvent(const sf::Event& event)
 {
-    // Default implementation (can be overridden in derived classes)
+    // Default implementation 
 }
 
 bool Scene::isCompleted() const

@@ -19,9 +19,10 @@ bool GameObject::isMarkedForDeletion() const
 void GameObject::setPosition(float x, float y)
 {
     mSprite.setPosition(x, y);
-    if (mPhysicsBody)
+    if (mPhysicsBody && !isMarkedForDeletion())
     {
-        mPhysicsBody->SetTransform(
+        mPhysicsBody->SetTransform
+        (
             b2Vec2(x * PhysicsWorld::INVERSE_SCALE, y * PhysicsWorld::INVERSE_SCALE),
             mPhysicsBody->GetAngle()
         );
@@ -67,7 +68,8 @@ void GameObject::setTexture(const sf::Texture& texture)
 void GameObject::setSize(float width, float height)
 {
     sf::Vector2u textureSize = mSprite.getTexture()->getSize();
-    mSprite.setScale(
+    mSprite.setScale
+    (
         width / static_cast<float>(textureSize.x),
         height / static_cast<float>(textureSize.y)
     );
@@ -116,7 +118,7 @@ void GameObject::createPhysicsBody(PhysicsWorld& world, b2BodyType type)
 
     if (!mPhysicsBody)
     {
-        std::cerr << "Failed to create physics body!" << std::endl;
+        std::cout << "Failed to create physics body!" << std::endl;
         return;
     }
 
@@ -125,7 +127,7 @@ void GameObject::createPhysicsBody(PhysicsWorld& world, b2BodyType type)
 
     if (width <= 0 || height <= 0)
     {
-        std::cerr << "Invalid sprite dimensions: " << width << "x" << height << std::endl;
+        std::cout << "Invalid sprite dimensions: " << width << "x" << height << std::endl;
         return;
     }
 
@@ -143,7 +145,7 @@ void GameObject::createPhysicsBody(PhysicsWorld& world, b2BodyType type)
 
     if (!fixture)
     {
-        std::cerr << "Failed to create fixture!" << std::endl;
+        std::cout << "Failed to create fixture!" << std::endl;
     }
 }
 

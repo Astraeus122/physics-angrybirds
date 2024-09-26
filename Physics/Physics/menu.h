@@ -5,7 +5,8 @@
 #include <vector>
 #include <functional>
 
-class Menu {
+class Menu
+{
 public:
     Menu(sf::RenderWindow& window);
     virtual ~Menu() = default;
@@ -18,7 +19,8 @@ protected:
     sf::RenderWindow& mWindow;
     sf::Font mFont;
 
-    struct Button {
+    struct Button
+    {
         sf::Text text;
         sf::FloatRect hitbox;
         std::function<void()> action;

@@ -5,7 +5,6 @@ JointObject::JointObject(PhysicsWorld& world, const sf::Texture& texture, JointT
     : GameObject(), mJointType(type), mJoint(nullptr)
 {
     setTexture(texture);
-    // Set size and create physics body as needed
 }
 
 JointObject::~JointObject()
@@ -35,7 +34,6 @@ void JointObject::render(sf::RenderWindow& window)
 
 void JointObject::onCollision(GameObject* other)
 {
-    // Handle collision if needed
 }
 
 void JointObject::createJoint(b2Body* bodyA, b2Body* bodyB)

@@ -1,5 +1,5 @@
 #include "game.h"
-#include "level_one_scene.h"
+#include "level_scene.h"
 #include <SFML/Graphics.hpp>
 
 int main() 
@@ -13,7 +13,7 @@ int main()
     game.setWindow(&window);
 
     // Create and set the initial scene
-    auto levelOneScene = std::make_unique<LevelOneScene>();
+    auto levelOneScene = std::make_unique<LevelScene>();
     game.setScene(std::move(levelOneScene));
 
     // Run the game

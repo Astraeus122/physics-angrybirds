@@ -4,7 +4,8 @@
 #include "menu.h"
 #include <functional>
 
-class InstructionsScreen : public Menu {
+class InstructionsScreen : public Menu 
+{
 public:
     InstructionsScreen(sf::RenderWindow& window, std::function<void()> backCallback);
 

@@ -10,11 +10,22 @@ class GameUI
 public:
     GameUI();
     void initialize(sf::RenderWindow* window);
+
     void update(int projectilesLeft, int enemiesLeft, int currentLevel);
     void render(sf::RenderWindow& window);
+
     void handleProjectileSelection(const sf::Vector2i& mousePosition);
     void renderProjectileSelection(sf::RenderWindow& window);
     Projectile::Type getSelectedProjectileType() const;
+
+    bool isProjectileAvailable(Projectile::Type type) const;
+    void updateProjectileAvailability(Projectile::Type type, bool available);
+    void setSelectedProjectileType(Projectile::Type type);
+
+    void handleMouseHover(const sf::Vector2i& mousePosition);
+    void handleMouseClick(const sf::Vector2i& mousePosition);
+
+    void initializeProjectileAvailability();
 
 private:
     sf::Font mFont;
@@ -32,7 +43,9 @@ private:
     void initializeProjectileSelection();
     void updateCurrentProjectileText();
     void loadProjectileTextures();
-    sf::Text mCurrentProjectileText;
+    sf::Text mCurrentProjectileText;   
+
+    std::array<bool, 5> mProjectileAvailability;
 };
 
 #endif

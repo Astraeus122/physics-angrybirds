@@ -4,7 +4,8 @@
 #include "menu.h"
 #include <functional>
 
-class MainMenu : public Menu {
+class MainMenu : public Menu 
+{
 public:
     MainMenu(sf::RenderWindow& window);
     MainMenu(sf::RenderWindow& window, std::function<void(int)> callback);

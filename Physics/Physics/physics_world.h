@@ -33,7 +33,6 @@ public:
 
     // Projectile effects
     void applyExplosionForce(const b2Vec2& center, float radius, float force);
-    void createSplitProjectiles(Projectile* projectile);
     void applyBounceEffect(Projectile* projectile);
 
     void removeMarkedBodies();
