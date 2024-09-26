@@ -401,7 +401,7 @@ void LevelScene::launchProjectile()
             mFinalProjectileLaunched = true;
         }
 
-        Projectile::Type launchedType = mProjectiles.back()->getType();
+        Projectile::Type launchedType = mProjectiles.back()->getProjectileType();
         mGameUI.updateProjectileAvailability(launchedType, false);
 
         updateUI(mProjectilesLeft, mEnemiesLeft, mCurrentLevel);

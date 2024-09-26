@@ -17,6 +17,7 @@ public:
 private:
     sf::Sprite mBackgroundSprite;
     sf::Texture mBackgroundTexture;
+    sf::Text mCongratulationsText;
     Game& mGame;
 };
 

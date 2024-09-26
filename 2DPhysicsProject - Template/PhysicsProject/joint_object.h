@@ -1,7 +1,7 @@
 #ifndef JOINT_OBJECT_H
 #define JOINT_OBJECT_H
 
-#include <box2d/box2d.h>
+#include "box2d/box2d.h"
 #include "game_object.h"
 
 class JointObject : public GameObject

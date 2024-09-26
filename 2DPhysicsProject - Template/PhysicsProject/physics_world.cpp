@@ -130,31 +130,55 @@ void PhysicsWorld::BeginContact(b2Contact* contact)
 
     if (objectA)
     {
-        try 
+        try
         {
             std::cout << "Attempting to access Object A..." << std::endl;
-            std::cout << "Collision detected: " << typeid(*objectA).name() << std::endl;
-            objectA->onCollision(objectB);
+            if (objectA != nullptr)
+            {
+                std::cout << "Collision detected: " << typeid(*objectA).name() << std::endl;
+
+                //  type checking
+                const char* typeA = objectA->getType();
+                std::cout << "Object A type: " << (typeA ? typeA : "Unknown") << std::endl;
+
+                // Call onCollision directly
+                objectA->onCollision(objectB);
+            }
+            else
+            {
+                std::cout << "Object A became null unexpectedly" << std::endl;
+            }
         }
-        catch (const std::exception& e) 
+        catch (const std::exception& e)
         {
             std::cout << "Exception caught while handling collision for Object A: " << e.what() << std::endl;
         }
-        catch (...) 
+        catch (...)
         {
             std::cout << "Unknown exception caught while handling collision for Object A" << std::endl;
         }
     }
-
     if (objectB)
     {
-        try 
+        try
         {
             std::cout << "Attempting to access Object B..." << std::endl;
-            std::cout << "Collision detected: " << typeid(*objectB).name() << std::endl;
-            objectB->onCollision(objectA);
+            if (objectB != nullptr)
+            {
+                const std::type_info& type = typeid(*objectB);
+                std::cout << "Collision detected: " << type.name() << std::endl;
+                objectB->onCollision(objectA);
+            }
+            else
+            {
+                std::cout << "Object B became null unexpectedly" << std::endl;
+            }
         }
-        catch (const std::exception& e) 
+        catch (const std::bad_typeid& e)
+        {
+            std::cout << "Bad typeid for Object B: " << e.what() << std::endl;
+        }
+        catch (const std::exception& e)
         {
             std::cout << "Exception caught while handling collision for Object B: " << e.what() << std::endl;
         }

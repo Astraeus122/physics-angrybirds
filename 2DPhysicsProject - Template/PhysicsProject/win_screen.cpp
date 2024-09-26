@@ -16,6 +16,12 @@ WinScreen::WinScreen(sf::RenderWindow& window, Game& game)
     float scaleY = window.getSize().y / static_cast<float>(mBackgroundTexture.getSize().y);
     mBackgroundSprite.setScale(scaleX, scaleY);
 
+    mCongratulationsText.setFont(mFont);
+    mCongratulationsText.setString("Congratulations!");
+    mCongratulationsText.setCharacterSize(60);
+    mCongratulationsText.setFillColor(sf::Color::White);
+    centerText(mCongratulationsText, 200.0f);
+
     addButton("Main Menu", [this]() { mGame.setState(Game::GameState::MainMenu); });
     addButton("Quit", [this]() { mGame.quitGame(); });
 
@@ -50,6 +56,7 @@ void WinScreen::update(sf::Time deltaTime)
 void WinScreen::render()
 {
     mWindow.draw(mBackgroundSprite);
+    mWindow.draw(mCongratulationsText);
     for (const auto& button : mButtons)
     {
         mWindow.draw(button.text);

@@ -3,7 +3,7 @@
 
 #include "game_object.h"
 #include <SFML/Graphics.hpp>
-#include <box2d/box2d.h>
+#include "box2d/box2d.h"
 #include <functional>
 
 class PhysicsWorld;
@@ -28,7 +28,8 @@ public:
     void onCollision(GameObject* other) override;
 
     void launch(const sf::Vector2f& direction, float force);
-    Type getType() const { return mType; }
+    const char* getType() const override { return "Projectile"; }
+    Type getProjectileType() const { return mType; }
     bool isLaunched() const { return mLaunched; }
 
     float calculateDamage() const;

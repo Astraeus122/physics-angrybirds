@@ -36,6 +36,7 @@ public:
     void nextLevel();
     void restartLevel();
     void quitGame();
+    void resetGameProgress();
 
 private:
     void processEvents();

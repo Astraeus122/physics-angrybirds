@@ -34,6 +34,7 @@ void Game::setState(GameState newState)
     {
     case GameState::MainMenu:
         resetGameState();
+        resetGameProgress(); 
         mCurrentMenu = std::make_unique<MainMenu>(*mWindow, [this](int option) { handleMainMenuCallback(option); });
         break;
     case GameState::Playing:
@@ -248,9 +249,10 @@ void Game::setScene(std::unique_ptr<Scene> scene)
 void Game::nextLevel()
 {
     mCurrentLevelNumber++;
-    if (mCurrentLevelNumber > 3) 
+    if (mCurrentLevelNumber > 3)
     {
         setState(GameState::GameWon);
+        resetGameProgress(); 
     }
     else
     {
@@ -293,5 +295,14 @@ void Game::quitGame()
     if (mWindow)
     {
         mWindow->close();
+    }
+}
+
+void Game::resetGameProgress()
+{
+    mCurrentLevelNumber = 1;
+    if (mLevelScene)
+    {
+        mLevelScene->setLevel(mCurrentLevelNumber);
     }
 }

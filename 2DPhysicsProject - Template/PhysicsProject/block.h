@@ -17,6 +17,7 @@ public:
     bool isDestroyed() const;
     float getHealth() const { return mHealth; }
     void initPhysicsBody(PhysicsWorld& world, bool isStatic = false);
+    const char* getType() const override { return "Block"; }
 
 private:
     float mHealth;

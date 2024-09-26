@@ -2,7 +2,7 @@
 #define GAME_OBJECT_H
 
 #include <SFML/Graphics.hpp>
-#include <box2d/box2d.h>
+#include "box2d/box2d.h"
 
 class PhysicsWorld;
 
@@ -33,6 +33,7 @@ public:
 
     virtual void debugDraw(sf::RenderWindow& window);
     void setPhysicsBody(b2Body* body);
+    virtual const char* getType() const { return "GameObject"; }
 
 protected:
     sf::Sprite mSprite;
