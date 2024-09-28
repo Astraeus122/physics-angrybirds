@@ -13,7 +13,7 @@ inline float toBox2D(float pixel)
     return pixel / SCALE;
 }
 
-inline float toPixel(float meter) 
+inline float toPixel(float meter)
 {
     return meter * SCALE;
 }
@@ -348,12 +348,12 @@ void LevelScene::createProjectile()
 
                         auto newProjectile = std::make_unique<Projectile>
                             (
-                            mPhysicsWorld,
-                            mFireballTexture,
-                            Projectile::Type::Standard,
-                            mWindow,
-                            newPosition
-                        );
+                                mPhysicsWorld,
+                                mFireballTexture,
+                                Projectile::Type::Standard,
+                                mWindow,
+                                newPosition
+                            );
 
                         newProjectile->getPhysicsBody()->SetLinearVelocity(newVelocity);
                         newProjectile->setLaunched(true);
@@ -390,6 +390,7 @@ void LevelScene::launchProjectile()
 
         sf::Vector2f direction = pull / pullLength;
         float force = pullLength * SCALING_FACTOR;
+        force = force * 1.08f;
 
         mProjectiles.back()->launch(direction, force);
         mProjectilesLeft--;
@@ -456,46 +457,6 @@ void LevelScene::resetProjectile()
     }
 }
 
-void LevelScene::createEnemies()
-{
-    // Clear existing enemies
-    mGameObjects.erase(
-        std::remove_if(mGameObjects.begin(), mGameObjects.end(),
-            [](const std::unique_ptr<GameObject>& obj) 
-            {
-                return dynamic_cast<Enemy*>(obj.get()) != nullptr;
-            }),
-        mGameObjects.end());
-
-    // Create enemies based on current level
-    std::vector<sf::Vector2f> enemyPositions;
-    switch (mCurrentLevel)
-    {
-    case 1:
-        enemyPositions = { {1700.f, 700.f}, {1600.f, 500.f} };
-        break;
-    case 2:
-        enemyPositions = { {1600.f, 700.f}, {1700.f, 500.f}, {1500.f, 300.f} };
-        break;
-    case 3:
-        enemyPositions = { {1500.f, 700.f}, {1600.f, 500.f}, {1700.f, 300.f}, {1400.f, 200.f} };
-        break;
-    default:
-        std::cout << "Invalid level number: " << mCurrentLevel << std::endl;
-        return;
-    }
-
-    for (const auto& pos : enemyPositions)
-    {
-        auto enemy = std::make_unique<Enemy>(mEnemyTexture, 80.f, 80.f);
-        enemy->setPosition(pos.x, pos.y);
-        enemy->initPhysicsBody(mPhysicsWorld);
-        mGameObjects.push_back(std::move(enemy));
-    }
-
-    mEnemiesLeft = enemyPositions.size();
-}
-
 void LevelScene::checkLevelCompletion()
 {
     mEnemiesLeft = 0;
@@ -550,57 +511,196 @@ void LevelScene::printAllBodies()
 void LevelScene::createBlocks()
 {
     // Clear existing blocks
-    mGameObjects.erase
-    (
+    mGameObjects.erase(
         std::remove_if(mGameObjects.begin(), mGameObjects.end(),
             [](const std::unique_ptr<GameObject>& obj) {
                 return dynamic_cast<Block*>(obj.get()) != nullptr;
             }),
         mGameObjects.end());
 
+    const float BLOCK_SIZE = 80.f;
+    const float GROUND_Y = mWindow->getSize().y - GROUND_HEIGHT;
+
+    // Variables for block creation
+    std::unique_ptr<Block> block;
+    float xPos, yPos;
+
     // Create blocks based on current level
     switch (mCurrentLevel)
     {
     case 1:
-        // Level 1 block layout
-        for (int i = 0; i < 5; ++i)
+        // Level 1: Simple pyramid structure
+        for (int row = 0; row < 5; ++row)
         {
-            auto block = std::make_unique<Block>(mBlockTexture, 80.f, 80.f);
-            float xPos = 1500.f + i * 90.f;
-            float yPos = 800.f - i * 90.f;
+            for (int col = 0; col <= row; ++col)
+            {
+                block = std::make_unique<Block>(mBlockTexture, BLOCK_SIZE, BLOCK_SIZE);
+                xPos = 1500.f + col * BLOCK_SIZE - row * BLOCK_SIZE / 2;
+                yPos = GROUND_Y - (5 - row) * BLOCK_SIZE;
+                block->setPosition(xPos, yPos);
+                block->initPhysicsBody(mPhysicsWorld);
+                mGameObjects.push_back(std::move(block));
+            }
+        }
+        break;
+
+    case 2:
+        // Level 2: Two towers with a bridge
+        for (int tower = 0; tower < 2; ++tower)
+        {
+            for (int row = 0; row < 6; ++row)
+            {
+                block = std::make_unique<Block>(mBlockTexture, BLOCK_SIZE, BLOCK_SIZE);
+                xPos = 1400.f + tower * BLOCK_SIZE * 5;
+                yPos = GROUND_Y - (row + 1) * BLOCK_SIZE;
+                block->setPosition(xPos, yPos);
+                block->initPhysicsBody(mPhysicsWorld);
+                mGameObjects.push_back(std::move(block));
+            }
+        }
+        // Bridge
+        for (int i = 0; i < 3; ++i)
+        {
+            block = std::make_unique<Block>(mBlockTexture, BLOCK_SIZE * 1.5f, BLOCK_SIZE / 2);
+            xPos = 1480.f + i * BLOCK_SIZE * 1.5f;
+            yPos = GROUND_Y - 6 * BLOCK_SIZE;
             block->setPosition(xPos, yPos);
             block->initPhysicsBody(mPhysicsWorld);
             mGameObjects.push_back(std::move(block));
         }
         break;
-    case 2:
-        // Level 2 block layout
+
+    case 3:
+        // Level 3: Complex structure with multiple layers
+        // Base layer
         for (int i = 0; i < 7; ++i)
         {
-            auto block = std::make_unique<Block>(mBlockTexture, 80.f, 80.f);
-            float xPos = 1400.f + i * 80.f;
-            float yPos = 800.f - std::abs(3 - i) * 80.f;
+            block = std::make_unique<Block>(mBlockTexture, BLOCK_SIZE, BLOCK_SIZE);
+            xPos = 1300.f + i * BLOCK_SIZE;
+            yPos = GROUND_Y - BLOCK_SIZE;
             block->setPosition(xPos, yPos);
             block->initPhysicsBody(mPhysicsWorld);
             mGameObjects.push_back(std::move(block));
         }
-        break;
-    case 3:
-        // Level 3 block layout
-        for (int i = 0; i < 9; ++i)
+        // Middle layer
+        for (int i = 0; i < 5; ++i)
         {
-            auto block = std::make_unique<Block>(mBlockTexture, 80.f, 80.f);
-            float xPos = 1300.f + (i % 3) * 90.f;
-            float yPos = 800.f - (i / 3) * 90.f;
+            block = std::make_unique<Block>(mBlockTexture, BLOCK_SIZE, BLOCK_SIZE);
+            xPos = 1340.f + i * BLOCK_SIZE;
+            yPos = GROUND_Y - 2 * BLOCK_SIZE;
             block->setPosition(xPos, yPos);
             block->initPhysicsBody(mPhysicsWorld);
             mGameObjects.push_back(std::move(block));
         }
+        // Top layer
+        for (int i = 0; i < 3; ++i)
+        {
+            block = std::make_unique<Block>(mBlockTexture, BLOCK_SIZE, BLOCK_SIZE);
+            xPos = 1380.f + i * BLOCK_SIZE;
+            yPos = GROUND_Y - 3 * BLOCK_SIZE;
+            block->setPosition(xPos, yPos);
+            block->initPhysicsBody(mPhysicsWorld);
+            mGameObjects.push_back(std::move(block));
+        }
+        // Roof
+        block = std::make_unique<Block>(mBlockTexture, BLOCK_SIZE * 3, BLOCK_SIZE / 2);
+        block->setPosition(1420.f, GROUND_Y - 3.5f * BLOCK_SIZE);
+        block->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(block));
         break;
+
     default:
         std::cout << "Invalid level number: " << mCurrentLevel << std::endl;
         break;
     }
+}
+
+void LevelScene::createEnemies()
+{
+    // Clear existing enemies
+    mGameObjects.erase(
+        std::remove_if(mGameObjects.begin(), mGameObjects.end(),
+            [](const std::unique_ptr<GameObject>& obj)
+            {
+                return dynamic_cast<Enemy*>(obj.get()) != nullptr;
+            }),
+        mGameObjects.end());
+
+    const float ENEMY_SIZE = 80.f;
+    const float GROUND_Y = mWindow->getSize().y - GROUND_HEIGHT;
+
+    // Create enemies based on current level
+    switch (mCurrentLevel)
+    {
+    case 1:
+        // Level 1: Enemies on top of the pyramid and on the ground
+    {
+        auto enemy1 = std::make_unique<Enemy>(mEnemyTexture, ENEMY_SIZE, ENEMY_SIZE);
+        enemy1->setPosition(1500.f, GROUND_Y - 5 * ENEMY_SIZE);
+        enemy1->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy1));
+
+        auto enemy2 = std::make_unique<Enemy>(mEnemyTexture, ENEMY_SIZE, ENEMY_SIZE);
+        enemy2->setPosition(1700.f, GROUND_Y - ENEMY_SIZE);
+        enemy2->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy2));
+    }
+    break;
+
+    case 2:
+        // Level 2: Enemies on top of towers and on the bridge
+    {
+        auto enemy1 = std::make_unique<Enemy>(mEnemyTexture, ENEMY_SIZE, ENEMY_SIZE);
+        enemy1->setPosition(1400.f, GROUND_Y - 7 * ENEMY_SIZE);
+        enemy1->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy1));
+
+        auto enemy2 = std::make_unique<Enemy>(mEnemyTexture, ENEMY_SIZE, ENEMY_SIZE);
+        enemy2->setPosition(1600.f, GROUND_Y - 6.5f * ENEMY_SIZE);
+        enemy2->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy2));
+
+        auto enemy3 = std::make_unique<Enemy>(mEnemyTexture, ENEMY_SIZE, ENEMY_SIZE);
+        enemy3->setPosition(1800.f, GROUND_Y - 7 * ENEMY_SIZE);
+        enemy3->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy3));
+    }
+    break;
+
+    case 3:
+        // Level 3: Enemies throughout the complex structure
+    {
+        auto enemy1 = std::make_unique<Enemy>(mEnemyTexture, ENEMY_SIZE, ENEMY_SIZE);
+        enemy1->setPosition(1300.f, GROUND_Y - 2 * ENEMY_SIZE);
+        enemy1->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy1));
+
+        auto enemy2 = std::make_unique<Enemy>(mEnemyTexture, ENEMY_SIZE, ENEMY_SIZE);
+        enemy2->setPosition(1500.f, GROUND_Y - 3 * ENEMY_SIZE);
+        enemy2->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy2));
+
+        auto enemy3 = std::make_unique<Enemy>(mEnemyTexture, ENEMY_SIZE, ENEMY_SIZE);
+        enemy3->setPosition(1700.f, GROUND_Y - 2 * ENEMY_SIZE);
+        enemy3->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy3));
+
+        auto enemy4 = std::make_unique<Enemy>(mEnemyTexture, ENEMY_SIZE, ENEMY_SIZE);
+        enemy4->setPosition(1420.f, GROUND_Y - 4 * ENEMY_SIZE);
+        enemy4->initPhysicsBody(mPhysicsWorld);
+        mGameObjects.push_back(std::move(enemy4));
+    }
+    break;
+
+    default:
+        std::cout << "Invalid level number: " << mCurrentLevel << std::endl;
+        break;
+    }
+
+    mEnemiesLeft = std::count_if(mGameObjects.begin(), mGameObjects.end(),
+        [](const std::unique_ptr<GameObject>& obj) {
+            return dynamic_cast<Enemy*>(obj.get()) != nullptr;
+        });
 }
 
 void LevelScene::updateUI(int projectilesLeft, int enemiesLeft, int currentLevel)
@@ -613,7 +713,7 @@ void LevelScene::removeDestroyedObjects()
     auto windowSize = mWindow->getSize();
     mGameObjects.erase(
         std::remove_if(mGameObjects.begin(), mGameObjects.end(),
-            [this, windowSize](const std::unique_ptr<GameObject>& obj) 
+            [this, windowSize](const std::unique_ptr<GameObject>& obj)
             {
                 if (obj->isMarkedForDeletion() ||
                     obj->getPosition().x < 0 || obj->getPosition().x > windowSize.x ||
@@ -698,7 +798,7 @@ void LevelScene::setLevel(int level)
 
 void LevelScene::resetProjectileAvailability()
 {
-    for (int i = 0; i < 5; ++i) 
+    for (int i = 0; i < 5; ++i)
     {
         mGameUI.updateProjectileAvailability(static_cast<Projectile::Type>(i), true);
     }

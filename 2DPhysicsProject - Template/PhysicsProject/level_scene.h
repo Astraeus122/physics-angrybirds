@@ -36,7 +36,7 @@ private:
     void resetProjectile();
     void createBlocks();
     void createEnemies();
-    
+
     void checkLevelCompletion();
     bool mLevelCompleted;
     bool mLevelFailed;
