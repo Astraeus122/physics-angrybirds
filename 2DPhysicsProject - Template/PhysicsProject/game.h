@@ -2,6 +2,7 @@
 #define GAME_H
 
 #include <SFML/Graphics.hpp>
+#include <SFML/System/Clock.hpp>
 #include <memory>
 #include "scene.h"
 #include "menu.h"
@@ -22,7 +23,8 @@ public:
         Paused,
         GameOver,
         GameWon,
-        HowToPlay
+        HowToPlay,
+        LevelTransition
     };
 
     Game();
@@ -38,7 +40,11 @@ public:
     void quitGame();
     void resetGameProgress();
 
+    void transitionToNextLevel();
+
 private:
+    sf::Clock mTransitionClock;
+    static constexpr float TRANSITION_DURATION = 1.0f;
     void processEvents();
     void update(sf::Time deltaTime);
     void render();

@@ -198,6 +198,17 @@ void Game::update(sf::Time deltaTime)
         if (mCurrentMenu)
             mCurrentMenu->update(deltaTime);
         break;
+
+    case GameState::LevelTransition:
+        if (mTransitionClock.getElapsedTime().asSeconds() >= TRANSITION_DURATION)
+        {
+            if (mLevelScene)
+            {
+                mLevelScene->setLevel(mCurrentLevelNumber);
+            }
+            setState(GameState::Playing);
+        }
+        break;
     }
 }
 
@@ -230,7 +241,7 @@ void Game::render()
 void Game::setScene(std::unique_ptr<Scene> scene)
 {
     delete mCurrentScene;  // Delete the old scene
-    mCurrentScene = scene.release();  //  ownership to mCurrentScene
+    mCurrentScene = scene.release();
     if (mCurrentScene && mWindow)
     {
         mCurrentScene->setWindow(mWindow);
@@ -252,11 +263,11 @@ void Game::nextLevel()
     if (mCurrentLevelNumber > 3)
     {
         setState(GameState::GameWon);
-        resetGameProgress(); 
+        resetGameProgress();
     }
     else
     {
-        loadLevel(mCurrentLevelNumber);
+        transitionToNextLevel();
     }
 }
 
@@ -304,5 +315,19 @@ void Game::resetGameProgress()
     if (mLevelScene)
     {
         mLevelScene->setLevel(mCurrentLevelNumber);
+    }
+}
+
+void Game::transitionToNextLevel()
+{
+    setState(GameState::LevelTransition);
+
+    // Start a timer for the transition
+    mTransitionClock.restart();
+
+    // Clear current level
+    if (mLevelScene)
+    {
+        mLevelScene->clearLevel();
     }
 }

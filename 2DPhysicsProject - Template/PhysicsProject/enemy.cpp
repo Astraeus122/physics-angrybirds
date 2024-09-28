@@ -35,12 +35,12 @@ void Enemy::render(sf::RenderWindow& window)
 
 void Enemy::onCollision(GameObject* other)
 {
-    Projectile* projectile = dynamic_cast<Projectile*>(other);
-    if (projectile)
-    {
-        float damageAmount = projectile->calculateDamage();
-        this->damage(damageAmount); 
-    }
+    //Projectile* projectile = dynamic_cast<Projectile*>(other);
+    //if (projectile)
+    //{
+        //float damageAmount = projectile->calculateDamage();
+        //this->damage(damageAmount); 
+    //}
 }
 
 void Enemy::damage(float amount)

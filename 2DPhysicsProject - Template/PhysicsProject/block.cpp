@@ -39,45 +39,7 @@ void Block::render(sf::RenderWindow& window)
 
 void Block::onCollision(GameObject* other)
 {
-    std::cout << "Block::onCollision called with other at address: " << static_cast<void*>(other) << std::endl;
-    if (other == nullptr)
-    {
-        std::cout << "Block::onCollision received null other object" << std::endl;
-        return;
-    }
-    try
-    {
-        const char* otherType = other->getType();
-        std::cout << "Type of other object: " << (otherType ? otherType : "Unknown") << std::endl;
 
-        if (otherType && strcmp(otherType, "Projectile") == 0)
-        {
-            Projectile* projectile = dynamic_cast<Projectile*>(other);
-            if (projectile)
-            {
-                std::cout << "Calculating damage..." << std::endl;
-                float damageAmount = projectile->calculateDamage();
-                std::cout << "Damage amount calculated: " << damageAmount << std::endl;
-                this->damage(damageAmount);
-            }
-            else
-            {
-                std::cout << "Failed to cast other object to Projectile" << std::endl;
-            }
-        }
-        else
-        {
-            std::cout << "Other object is not a Projectile" << std::endl;
-        }
-    }
-    catch (const std::exception& e)
-    {
-        std::cout << "Exception in Block::onCollision: " << e.what() << std::endl;
-    }
-    catch (...)
-    {
-        std::cout << "Unknown exception in Block::onCollision" << std::endl;
-    }
 }
 
 void Block::damage(float amount)

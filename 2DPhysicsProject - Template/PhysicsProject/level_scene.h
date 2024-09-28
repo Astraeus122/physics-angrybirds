@@ -30,6 +30,7 @@ public:
     int getCurrentLevel() const { return mCurrentLevel; }
 
     void resetProjectileAvailability();
+    void clearLevel();
 
 private:
     void createGround();
@@ -83,7 +84,7 @@ private:
 
     bool mProjectileLaunched;
     sf::Clock mProjectileLifetime;
-    const float PROJECTILE_LIFETIME = 8.0f; // 8 seconds
+    const float PROJECTILE_LIFETIME = 8.0f; 
 
     const int MAX_PROJECTILES = 5;
     int mProjectilesLeft;
@@ -93,6 +94,7 @@ private:
 
     void removeDestroyedObjects();
     std::vector<std::function<void()>> mPendingActions;
+
 };
 
 #endif

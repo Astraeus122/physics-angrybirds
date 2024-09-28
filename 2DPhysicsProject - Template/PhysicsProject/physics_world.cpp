@@ -96,95 +96,42 @@ void PhysicsWorld::BeginContact(b2Contact* contact)
     b2Fixture* fixtureA = contact->GetFixtureA();
     b2Fixture* fixtureB = contact->GetFixtureB();
 
+    if (!fixtureA || !fixtureB) return;
+
     b2Body* bodyA = fixtureA->GetBody();
     b2Body* bodyB = fixtureB->GetBody();
 
-    GameObject* objectA = nullptr;
-    GameObject* objectB = nullptr;
+    if (!bodyA || !bodyB) return;
 
-    std::cout << "Begin contact between bodies at positions: ("
-        << bodyA->GetPosition().x << ", " << bodyA->GetPosition().y << ") and ("
-        << bodyB->GetPosition().x << ", " << bodyB->GetPosition().y << ")" << std::endl;
+    GameObject* objectA = reinterpret_cast<GameObject*>(bodyA->GetUserData().pointer);
+    GameObject* objectB = reinterpret_cast<GameObject*>(bodyB->GetUserData().pointer);
 
-    if (bodyA)
-    {
-        uintptr_t userDataA = bodyA->GetUserData().pointer;
-        std::cout << "Body A user data: " << userDataA << std::endl;
-        if (userDataA != 0 && userDataA != uintptr_t(-1))
-        {
-            objectA = reinterpret_cast<GameObject*>(userDataA);
-            std::cout << "Object A address: " << objectA << std::endl;
-        }
-    }
-
-    if (bodyB)
-    {
-        uintptr_t userDataB = bodyB->GetUserData().pointer;
-        std::cout << "Body B user data: " << userDataB << std::endl;
-        if (userDataB != 0 && userDataB != uintptr_t(-1))
-        {
-            objectB = reinterpret_cast<GameObject*>(userDataB);
-            std::cout << "Object B address: " << objectB << std::endl;
-        }
-    }
-
-    if (objectA)
+    if (objectB && dynamic_cast<Projectile*>(objectB))
     {
         try
         {
-            std::cout << "Attempting to access Object A..." << std::endl;
-            if (objectA != nullptr)
+            if (objectA)
             {
-                std::cout << "Collision detected: " << typeid(*objectA).name() << std::endl;
-
-                //  type checking
-                const char* typeA = objectA->getType();
-                std::cout << "Object A type: " << (typeA ? typeA : "Unknown") << std::endl;
-
-                // Call onCollision directly
-                objectA->onCollision(objectB);
-            }
-            else
-            {
-                std::cout << "Object A became null unexpectedly" << std::endl;
-            }
-        }
-        catch (const std::exception& e)
-        {
-            std::cout << "Exception caught while handling collision for Object A: " << e.what() << std::endl;
-        }
-        catch (...)
-        {
-            std::cout << "Unknown exception caught while handling collision for Object A" << std::endl;
-        }
-    }
-    if (objectB)
-    {
-        try
-        {
-            std::cout << "Attempting to access Object B..." << std::endl;
-            if (objectB != nullptr)
-            {
-                const std::type_info& type = typeid(*objectB);
-                std::cout << "Collision detected: " << type.name() << std::endl;
                 objectB->onCollision(objectA);
             }
-            else
-            {
-                std::cout << "Object B became null unexpectedly" << std::endl;
-            }
-        }
-        catch (const std::bad_typeid& e)
-        {
-            std::cout << "Bad typeid for Object B: " << e.what() << std::endl;
         }
         catch (const std::exception& e)
         {
-            std::cout << "Exception caught while handling collision for Object B: " << e.what() << std::endl;
+            std::cout << "Exception in collision handling: " << e.what() << std::endl;
         }
-        catch (...)
+    }
+    else if (objectA && dynamic_cast<Projectile*>(objectA))
+    {
+        try
         {
-            std::cout << "Unknown exception caught while handling collision for Object B" << std::endl;
+            if (objectB)
+            {
+                objectA->onCollision(objectB);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cout << "Exception in collision handling: " << e.what() << std::endl;
         }
     }
 }
